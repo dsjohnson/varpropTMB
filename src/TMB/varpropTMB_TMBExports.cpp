@@ -2,17 +2,15 @@
 
 #define TMB_LIB_INIT R_init_varpropTMB_TMBExports
 #include <TMB.hpp>
-#include "GammaNLL.hpp"
-#include "NormalNLL.hpp"
+#include "dsm.hpp"
 #include "chooseNLL.hpp"
+
 
 template<class Type>
 Type objective_function<Type>::operator() () {
   DATA_STRING(model);
-  if(model == "GammaNLL") {
-    return GammaNLL(this);
-  } else if(model == "NormalNLL") {
-    return NormalNLL(this);
+  if(model == "dsm") {
+    return dsm(this);
   } else if(model == "chooseNLL") {
     return chooseNLL(this);
   } else {
