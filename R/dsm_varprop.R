@@ -27,7 +27,6 @@ dsm_varprop <- function(formula, model_data, offset_list=NULL, family="poisson",
   Xf <- model.matrix(fe_formula, model_data)
   
   ### Smooths
-  source("~/research/projects/r_packages/varpropTMB/R/smooth_processing.R", echo=FALSE)
   sm_list <- parse_smoothers(formula, model_data)
   if(sm_list$has_smooths){
     Xs_idx <- NULL
@@ -61,11 +60,18 @@ dsm_varprop <- function(formula, model_data, offset_list=NULL, family="poisson",
   ### Lists for dsm model
   
   dl <- list(
-    model="dsm", family = family_int, y=y, n=length(y), Xf=Xf, null_sel=as.integer(select),
-    Oe=Oe, has_smooth=as.integer(sm_list$has_smooths), n_bs=length(Xs_idx),
-    n_us=length(Zs_idx), Xs=Xs, Xs_idx=Xs_idx, Zs=Zs, Zs_idx=Zs_idx,
-    varprop=varprop, Ke=Ke, Ve=offset_list$offset_V, 
-    family="poisson"
+    model="dsm", 
+    #family = family_int, 
+    y=y, n=length(y), Xf=Xf, 
+    #null_sel=as.integer(select),
+    Oe=Oe, 
+    #has_smooth=as.integer(sm_list$has_smooths), n_bs=length(Xs_idx),
+    n_us=length(Zs_idx), Xs=Xs, 
+    #Xs_idx=Xs_idx, 
+    Zs=Zs, Zs_idx=Zs_idx,
+    #varprop=varprop, 
+    Ke=Ke, Ve=offset_list$offset_V#, 
+    #family="poisson"
   )
   
   pl <- list(
@@ -73,37 +79,36 @@ dsm_varprop <- function(formula, model_data, offset_list=NULL, family="poisson",
     bs = rep(0,ncol(dl$Xs)), 
     us = rep(0, length(dl$Zs_idx)), 
     ln_sig_us = rep(0,max(dl$Zs_idx)+1), 
-    ln_sig_bs = rep(0,max(dl$Xs_idx)+1), 
-    de = ifelse(varprop, rep(0, ncol(dl$Ke)), 0),
-    ln_phi = 0, logit_p = -4.59512
+    #ln_sig_bs = rep(0,max(dl$Xs_idx)+1), 
+    de = rep(0, ncol(dl$Ke))#,
+    #ln_phi = 0, logit_p = -4.59512
   )
   
   ml <- lapply(pl, \(x) seq_along(x))
   # fix family par
-  if(family=="poisson"){
-    ml$ln_phi <- NA; ml$logit_p<- NA
-  } else if(family=="nbinom"){
-    ml$logit_p <- NA
-  }
-  # fix smooth
-  if(!dl$has_smooth){
-    ml$bs <- NA; ml$us <- NA; ml$ln_sig_us <- NA; ml$ln_sig_bs <- NA
-  }
-  # fix select
-  if(!select & sm_list$has_smooths){
-    ml$ln_sig_bs <- rep(NA,max(Xs_idx)+1)
-  }
-  
+  # if(family=="poisson"){
+  #   ml$ln_phi <- NA; ml$logit_p<- NA
+  # } else if(family=="nbinom"){
+  #   ml$logit_p <- NA
+  # }
+  # # fix smooth
+  # if(!dl$has_smooth){
+  #   ml$bs <- NA; ml$us <- NA; ml$ln_sig_us <- NA; ml$ln_sig_bs <- NA
+  # }
+  # # fix select
+  # if(!select & sm_list$has_smooths){
+  #   ml$ln_sig_bs <- rep(NA,max(Xs_idx)+1)
+  # }
+
   ml <- lapply(ml, factor)
   
   # dyn.load(dynlib("/Users/devin.johnson/research/projects/r_packages/varpropTMB/src/TMB/varpropTMB_TMBExports"))
-  obj <- TMB::MakeADFun(data = dl, parameters = pl, map = ml, random = c("de","us"),
+  obj <- TMB::MakeADFun(data = dl, parameters = pl, map = ml, random = c("us"),
                         DLL = "varpropTMB_TMBExports")
   
   opt <- nlminb(obj$par, obj$fn, gradient = obj$gr, control=list(iter.max=10000, eval.max=10000))
   
-  obj <- TMB::MakeADFun(data = dl, parameters = pl, map = ml, 
-                        DLL = "varpropTMB_TMBExports")
+  sdreport(obj)
   
   
   

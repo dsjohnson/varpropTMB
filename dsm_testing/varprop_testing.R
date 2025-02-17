@@ -4,11 +4,12 @@ library(TMB)
 library(sdmTMB)
 library(dsm)
 library(magrittr)
+library(scam)
 load("~/research/projects/r_packages/varpropTMB/dsm_testing/dsm_test_data.RData")
 
 ddf <- detfc.hr.null
 model_data <- dsm.xy.depth$data
-formula <- count ~ s(x, y, k=10) + s(depth, k = 20)
+formula <- count ~ t2(x, y, k=10) + s(depth, k = 20, bs="ts")
 select <- FALSE
 family <- "poisson"
 
@@ -31,20 +32,20 @@ Ke <- numDeriv::jacobian(offset_list$offset_func, offset_list$offset_par)
 model_data$Ke <- Ke
 
 
-# fit <- mgcv::gam(formula, data=model_data, offset = offset_list$offset_func(offset_list$offset_par), 
-#                  method = "REML", family = quasipoisson(link = "log"))
+fit <- scam(formula, data=model_data, offset = offset_list$offset_func(offset_list$offset_par),
+                 method = "REML", family = quasipoisson(link = "log"))
 
 
 
 
 
 fit <- sdmTMB(
-  count ~ Ke + s(x, y, k=10) + s(depth, k = 20),
-  data=model_data, family = nbinom1(link="log"), spatial = "off",
-  offset = offset_list$offset_func(offset_list$offset_par),
-  priors = sdmTMBpriors(
-    b = mvnormal(location = c(NA,0,0), scale = Ve)
-  )
+  count ~ s(x, y, k=10) + s(depth, k = 20),
+  data=model_data, family = tweedie(link="log"), spatial = "off",
+  offset = log(offset_list$offset_func(offset_list$offset_par)),
+  # priors = sdmTMBpriors(
+  #   b = mvnormal(location = c(NA,0,0), scale = Ve)
+  # )
 )
 
 tmb_obj <- fit$tmb_obj
@@ -53,11 +54,12 @@ rep <- sdreport(tmb_obj)
 preddata$Ke <- matrix(0,nrow(preddata), 2)
 
 
-pdata <- preddata
+preddata$x <- 0
+preddata$y <- 0
 preddata$depth <- mean(pdata$depth)
-ppp <- predict(fit, newdata=pdata, se_fit = TRUE)
+ppp <- predict(fit, newdata=preddata, se_fit = TRUE)
 ppp$est <- ppp$est-mean(ppp$est)
-plot(ppp$depth, ppp$est, type='l')
+plot(ppp$depth, ppp$est)
 
 preddata_sf$pred <- ppp$est
 mapview(preddata_sf, zcol="pred")

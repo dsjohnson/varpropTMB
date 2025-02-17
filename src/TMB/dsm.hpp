@@ -9,11 +9,11 @@ using namespace density;
 #define TMB_OBJECTIVE_PTR obj
 
 // Family spec
-enum valid_family {
-  pois_family = 1,
-  nb_family = 2,
-  tw_family = 3
-};
+// enum valid_family {
+//   pois_family = 1,
+//   nb_family = 2,
+//   tw_family = 3
+// };
 
 
 
@@ -23,22 +23,22 @@ Type dsm(objective_function<Type>* obj) {
   
   // Data objects
   
-  DATA_INTEGER(family);
+  // DATA_INTEGER(family);
   DATA_INTEGER(n);
   DATA_VECTOR(y);
   DATA_MATRIX(Xf);
-  DATA_INTEGER(null_sel);
+  // DATA_INTEGER(null_sel);
   DATA_VECTOR(Oe);
   
-  DATA_INTEGER(has_smooth);
-  DATA_INTEGER(n_bs);
+  // DATA_INTEGER(has_smooth);
+  // DATA_INTEGER(n_bs);
   DATA_INTEGER(n_us);
   DATA_MATRIX(Xs);
-  DATA_IVECTOR(Xs_idx);
+  // DATA_IVECTOR(Xs_idx);
   DATA_MATRIX(Zs);
   DATA_IVECTOR(Zs_idx);
   
-  DATA_INTEGER(varprop);
+  // DATA_INTEGER(varprop);
   DATA_MATRIX(Ke);
   DATA_MATRIX(Ve);
   
@@ -47,37 +47,30 @@ Type dsm(objective_function<Type>* obj) {
   PARAMETER_VECTOR(bs);
   PARAMETER_VECTOR(us);
   PARAMETER_VECTOR(ln_sig_us);
-  PARAMETER_VECTOR(ln_sig_bs);
+  // PARAMETER_VECTOR(ln_sig_bs);
   PARAMETER_VECTOR(de);
-  PARAMETER(ln_phi);
-  PARAMETER(logit_p);
+  // PARAMETER(ln_phi);
+  // PARAMETER(logit_p);
   
 
-
-
-
-  
   Type jnll = 0.0;
-  
-  
-  vector<Type> ln_mu(n); ln_mu.setZero();
-  
-  // Fixed effects and effort offset
-  ln_mu += Oe + Xf*bf;
   
   // Transform parameters
   vector<Type> sig_us = exp(ln_sig_us);
-  vector<Type> sig_bs = exp(ln_sig_bs);
-  Type p = invlogit(logit_p) + 1;
-  Type phi = exp(ln_phi);
+  // vector<Type> sig_bs = exp(ln_sig_bs);
+  // Type p = invlogit(logit_p) + 1;
+  // Type phi = exp(ln_phi);
   
   // Add smooths
   //if(has_smooth) 
-    ln_mu += Xs*bs + Zs*us;
+  // ln_mu += Xs*bs + Zs*us;
   
   // Varprop
   //if(varprop) 
-    ln_mu += Ke*de;
+  //ln_mu += Ke*de;
+    
+  vector<Type> ln_mu = Oe + Xf*bf +  Xs*bs + Zs*us + Ke*de;
+  
   
   // Inverse link (has to be log) of linear predictor
   vector<Type> mu = exp(ln_mu);
